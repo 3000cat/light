@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>星星國光影魔術師：RGB三原色光實驗室</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts: Noto Sans TC 與 Orbitron (科技感數字) -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* 自訂全域樣式與字體 */
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #050508;
+            color: #ffffff;
+            overflow: hidden; /* 單頁滿版無捲動 */
+            user-select: none; /* 防止拖曳時選取文字 */
+        }
+
+        .font-tech {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* 玻璃擬態面板 */
+        .glass-panel {
+            background: rgba(18, 20, 32, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+        }
+
+        /* 自訂滑桿樣式 - 通用 */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        /* 滑桿軌道 */
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* 滑桿圓鈕 - 紅光 */
+        .slider-red::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 15px;
+            width: 15px;
+            border-radius: 50%;
+            background: #ff2a5f;
+            box-shadow: 0 0 10px #ff2a5f, 0 0 20px #ff2a5f;
+            border: 2px solid #ffffff;
+            margin-top: -5px;
+            transition: transform 0.15s ease;
+        }
+        .slider-red::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+        /* 滑桿圓鈕 - 綠光 */
+        .slider-green::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 15px;
+            width: 15px;
+            border-radius: 50%;
+            background: #00ff88;
+            box-shadow: 0 0 10px #00ff88, 0 0 20px #00ff88;
+            border: 2px solid #ffffff;
+            margin-top: -5px;
+            transition: transform 0.15s ease;
+        }
+        .slider-green::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+        /* 滑桿圓鈕 - 藍光 */
+        .slider-blue::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 15px;
+            width: 15px;
+            border-radius: 50%;
+            background: #00d0ff;
+            box-shadow: 0 0 10px #00d0ff, 0 0 20px #00d0ff;
+            border: 2px solid #ffffff;
+            margin-top: -5px;
+            transition: transform 0.15s ease;
+        }
+        .slider-blue::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+        /* 滑桿圓鈕 - 大小 */
+        .slider-size::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 14px;
+            width: 14px;
+            border-radius: 50%;
+            background: #a855f7;
+            box-shadow: 0 0 10px #a855f7;
+            border: 2px solid #ffffff;
+            margin-top: -5px;
+            transition: transform 0.15s ease;
+        }
+        .slider-size::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+        /* 畫布容器光暈背景 */
+        .canvas-container {
+            background: radial-gradient(circle at center, #111424 0%, #050508 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 網格背景裝飾 */
+        .bg-grid {
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        }
+
+        /* 按鈕發光特效 */
+        .btn-glow {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-glow:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.25);
+        }
+        .btn-glow:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="h-[100dvh] w-screen overflow-hidden flex flex-col bg-grid">
+
+    <!-- 頂部標題列 (精簡高度) -->
+    <header class="w-full py-1.5 px-4 md:px-6 glass-panel border-b border-white/10 z-20 flex items-center justify-between gap-2 shrink-0">
+        <div class="flex items-center gap-2 min-w-0">
+            <!-- 發光三原色 Logo -->
+            <div class="relative w-8 h-8 flex items-center justify-center shrink-0">
+                <span class="absolute w-4 h-4 rounded-full bg-red-500 mix-blend-screen -top-0.5 blur-[1px] animate-pulse"></span>
+                <span class="absolute w-4 h-4 rounded-full bg-green-500 mix-blend-screen bottom-0.5 left-0.5 blur-[1px] animate-pulse" style="animation-delay: 0.3s;"></span>
+                <span class="absolute w-4 h-4 rounded-full bg-blue-500 mix-blend-screen bottom-0.5 right-0.5 blur-[1px] animate-pulse" style="animation-delay: 0.6s;"></span>
+            </div>
+            <div class="truncate">
+                <h1 class="text-base md:text-xl font-black tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-rose-400 via-emerald-300 to-cyan-400 truncate">
+                    星星國光影魔術師：RGB三原色光實驗室
+                </h1>
+            </div>
+        </div>
+
+        <!-- 快捷功能按鈕 -->
+        <div class="flex items-center gap-1.5 md:gap-2 shrink-0">
+            <button id="btn-center" class="btn-glow px-2.5 md:px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-medium flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+                <span>交疊混色</span>
+            </button>
+            <button id="btn-spread" class="btn-glow px-2.5 md:px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-medium flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-cyan-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                <span>分開光束</span>
+            </button>
+            <button id="btn-info" class="btn-glow px-2.5 md:px-3.5 py-1.5 rounded-xl bg-indigo-500/30 hover:bg-indigo-500/50 border border-indigo-400/30 text-indigo-200 text-xs font-medium flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span>科學原理</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 主要互動區塊：強制左右兩邊並排滿版 -->
+    <main class="flex-1 flex flex-row min-h-0 overflow-hidden relative">
+        
+        <!-- 左邊：華麗光學模擬畫布 -->
+        <div id="canvas-wrapper" class="flex-1 h-full min-w-0 canvas-container relative flex items-center justify-center cursor-grab active:cursor-grabbing">
+            <canvas id="lightCanvas" class="w-full h-full block"></canvas>
+            
+            <!-- 畫布角落提示標籤 -->
+            <div class="absolute top-3 left-3 pointer-events-none glass-panel px-3 py-1 rounded-full text-xs text-slate-300 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span class="hidden sm:inline">提示：可直接用滑鼠或手指拖曳三個光圈！</span>
+                <span class="sm:hidden">拖曳光圈觀察混色</span>
+            </div>
+
+            <!-- 中心混合光結果即時顯示器 (懸浮於左下角) -->
+            <div class="absolute bottom-3 left-3 glass-panel p-2.5 md:p-3 rounded-2xl flex items-center gap-3 border border-white/15 max-w-[calc(100%-1.5rem)]">
+                <div id="mixed-preview" class="w-10 h-10 md:w-11 md:h-11 rounded-xl border-2 border-white/40 shadow-lg transition-colors duration-100 shrink-0" style="background-color: rgb(255, 255, 255); box-shadow: 0 0 25px rgb(255, 255, 255);"></div>
+                <div class="min-w-0">
+                    <div class="text-[11px] text-slate-400 font-medium">三光完全交疊合成色</div>
+                    <div id="mixed-name" class="text-sm md:text-base font-bold text-white tracking-wide truncate">純白光 (White)</div>
+                    <div id="mixed-rgb-text" class="text-[11px] font-tech text-slate-300 truncate">RGB(255, 255, 255) • #FFFFFF</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右邊：控制台面板 (極致緊湊單頁佈局，無捲動條) -->
+        <aside class="w-[300px] sm:w-[340px] md:w-[380px] lg:w-[410px] h-full shrink-0 glass-panel border-l border-white/10 px-3 py-2 flex flex-col justify-between gap-1 z-10 overflow-hidden">
+            
+            <!-- 區塊標題 -->
+            <div class="flex items-center justify-between border-b border-white/10 pb-1 shrink-0">
+                <h2 class="text-xs font-bold text-white flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                    光束強度控制器
+                </h2>
+                <button id="btn-reset-values" class="text-[11px] text-slate-400 hover:text-white underline transition">恢復全亮 (255)</button>
+            </div>
+
+            <!-- 紅光控制器 -->
+            <div class="px-2.5 py-1 rounded-lg bg-gradient-to-r from-rose-950/40 to-transparent border border-rose-500/20 shrink-0">
+                <div class="flex justify-between items-center text-[11px] mb-0.5">
+                    <label for="red-slider" class="font-bold text-rose-400 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e]"></span>
+                        紅光 (Red)
+                    </label>
+                    <div class="flex items-center gap-1.5">
+                        <span id="red-percent" class="text-[10px] text-rose-300/70">100%</span>
+                        <span id="red-val" class="font-tech text-[10px] font-bold text-rose-300 bg-rose-950/80 px-1.5 py-0 rounded border border-rose-500/30 min-w-[2.3rem] text-center">255</span>
+                    </div>
+                </div>
+                <input type="range" id="red-slider" min="0" max="255" value="255" class="slider-red block">
+            </div>
+
+            <!-- 綠光控制器 -->
+            <div class="px-2.5 py-1 rounded-lg bg-gradient-to-r from-emerald-950/40 to-transparent border border-emerald-500/20 shrink-0">
+                <div class="flex justify-between items-center text-[11px] mb-0.5">
+                    <label for="green-slider" class="font-bold text-emerald-400 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
+                        綠光 (Green)
+                    </label>
+                    <div class="flex items-center gap-1.5">
+                        <span id="green-percent" class="text-[10px] text-emerald-300/70">100%</span>
+                        <span id="green-val" class="font-tech text-[10px] font-bold text-emerald-300 bg-emerald-950/80 px-1.5 py-0 rounded border border-emerald-500/30 min-w-[2.3rem] text-center">255</span>
+                    </div>
+                </div>
+                <input type="range" id="green-slider" min="0" max="255" value="255" class="slider-green block">
+            </div>
+
+            <!-- 藍光控制器 -->
+            <div class="px-2.5 py-1 rounded-lg bg-gradient-to-r from-cyan-950/40 to-transparent border border-cyan-500/20 shrink-0">
+                <div class="flex justify-between items-center text-[11px] mb-0.5">
+                    <label for="blue-slider" class="font-bold text-cyan-400 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-cyan-500 shadow-[0_0_8px_#06b6d4]"></span>
+                        藍光 (Blue)
+                    </label>
+                    <div class="flex items-center gap-1.5">
+                        <span id="blue-percent" class="text-[10px] text-cyan-300/70">100%</span>
+                        <span id="blue-val" class="font-tech text-[10px] font-bold text-cyan-300 bg-cyan-950/80 px-1.5 py-0 rounded border border-cyan-500/30 min-w-[2.3rem] text-center">255</span>
+                    </div>
+                </div>
+                <input type="range" id="blue-slider" min="0" max="255" value="255" class="slider-blue block">
+            </div>
+
+            <!-- 光束半徑與光暈模式設定 -->
+            <div class="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 shrink-0">
+                <div class="flex justify-between items-center mb-0.5">
+                    <label for="radius-slider" class="text-[11px] font-medium text-slate-300">光束照亮範圍</label>
+                    <span id="radius-val" class="font-tech text-[10px] text-purple-300 bg-purple-950/60 px-1.5 py-0 rounded border border-purple-500/30">標準</span>
+                </div>
+                <input type="range" id="radius-slider" min="45" max="170" value="82" class="slider-size block">
+                
+                <div class="mt-1 flex items-center justify-between gap-2">
+                    <span class="text-[11px] text-slate-300">光束邊緣</span>
+                    <div class="flex bg-black/40 p-0.5 rounded-md border border-white/10">
+                        <button id="mode-sharp" class="px-2 py-0.5 rounded text-[10px] font-medium bg-purple-600 text-white shadow transition">銳利光圈</button>
+                        <button id="mode-soft" class="px-2 py-0.5 rounded text-[10px] font-medium text-slate-400 hover:text-white transition">柔和聚光燈</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 經典色彩快速實驗按鈕 (改為三欄雙列，大幅節省垂直高度) -->
+            <div class="shrink-0">
+                <h3 class="text-[11px] font-bold text-slate-300 mb-1">✨ 一鍵實驗經典混色配方</h3>
+                <div class="grid grid-cols-3 gap-1">
+                    <button onclick="applyPreset(255, 255, 0, '黃光 (Yellow)')" class="btn-glow px-1.5 py-1 rounded-lg bg-yellow-500/15 hover:bg-yellow-500/25 border border-yellow-400/30 text-left flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-yellow-300 shadow-[0_0_6px_#fde047] shrink-0"></span>
+                        <div class="min-w-0">
+                            <div class="text-[10px] font-bold text-yellow-200 truncate leading-tight">黃光</div>
+                            <div class="text-[9px] text-yellow-400/80 leading-tight truncate">紅+綠</div>
+                        </div>
+                    </button>
+
+                    <button onclick="applyPreset(0, 255, 255, '青光 (Cyan)')" class="btn-glow px-1.5 py-1 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/30 text-left flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-cyan-300 shadow-[0_0_6px_#67e8f9] shrink-0"></span>
+                        <div class="min-w-0">
+                            <div class="text-[10px] font-bold text-cyan-200 truncate leading-tight">青光</div>
+                            <div class="text-[9px] text-cyan-400/80 leading-tight truncate">綠+藍</div>
+                        </div>
+                    </button>
+
+                    <button onclick="applyPreset(255, 0, 255, '洋紅光 (Magenta)')" class="btn-glow px-1.5 py-1 rounded-lg bg-fuchsia-500/15 hover:bg-fuchsia-500/25 border border-fuchsia-400/30 text-left flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-fuchsia-400 shadow-[0_0_6px_#e879f9] shrink-0"></span>
+                        <div class="min-w-0">
+                            <div class="text-[10px] font-bold text-fuchsia-200 truncate leading-tight">洋紅</div>
+                            <div class="text-[9px] text-fuchsia-400/80 leading-tight truncate">紅+藍</div>
+                        </div>
+                    </button>
+
+                    <button onclick="applyPreset(255, 255, 255, '純白光 (White)')" class="btn-glow px-1.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 border border-white/30 text-left flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_6px_#ffffff] shrink-0"></span>
+                        <div class="min-w-0">
+                            <div class="text-[10px] font-bold text-white truncate leading-tight">純白光</div>
+                            <div class="text-[9px] text-slate-300 leading-tight truncate">紅+綠+藍</div>
+                        </div>
+                    </button>
+
+                    <button onclick="applyPreset(255, 128, 0, '暖橘光 (Orange)')" class="btn-glow px-1.5 py-1 rounded-lg bg-orange-500/15 hover:bg-orange-500/25 border border-orange-400/30 text-left flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-orange-400 shadow-[0_0_6px_#fb923c] shrink-0"></span>
+                        <div class="min-w-0">
+                            <div class="text-[10px] font-bold text-orange-200 truncate leading-tight">暖橘光</div>
+                            <div class="text-[9px] text-orange-400/80 leading-tight truncate">強紅+弱綠</div>
+                        </div>
+                    </button>
+
+                    <button onclick="applyPreset(160, 32, 240, '紫羅蘭光 (Violet)')" class="btn-glow px-1.5 py-1 rounded-lg bg-purple-500/15 hover:bg-purple-500/25 border border-purple-400/30 text-left flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-purple-400 shadow-[0_0_6px_#c084fc] shrink-0"></span>
+                        <div class="min-w-0">
+                            <div class="text-[10px] font-bold text-purple-200 truncate leading-tight">紫羅蘭</div>
+                            <div class="text-[9px] text-purple-400/80 leading-tight truncate">中紅+強藍</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+        </aside>
+    </main>
+
+    <!-- 科學原理教學彈出視窗 (Modal) -->
+    <div id="info-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+        <div class="glass-panel max-w-lg w-full rounded-3xl p-6 md:p-8 border border-white/20 space-y-5 relative animate-[fadeIn_0.2s_ease-out]">
+            <button id="close-modal" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition">
+                ✕
+            </button>
+            
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 text-xl">
+                    💡
+                </div>
+                <h3 class="text-xl font-bold text-white">為什麼光線越加越亮？</h3>
+            </div>
+
+            <div class="space-y-3 text-sm text-slate-300 leading-relaxed">
+                <p>
+                    <strong class="text-white">1. 光的三原色（RGB）：</strong><br>
+                    人類眼睛的視網膜上有三種對顏色敏感的錐狀細胞，分別對<span class="text-rose-400 font-bold">紅光 (Red)</span>、<span class="text-emerald-400 font-bold">綠光 (Green)</span>與<span class="text-cyan-400 font-bold">藍光 (Blue)</span>最敏感。手機、電視與電腦螢幕都是利用這三種微小的色光來混合出上千萬種色彩！
+                </p>
+                <p>
+                    <strong class="text-white">2. 加法混色法 (Additive Color)：</strong><br>
+                    與水彩顏料（越混越暗、變成黑褐色）不同，色光疊加時能量會相加，因此<strong class="text-amber-300">越混合會越明亮</strong>：
+                </p>
+                <ul class="bg-black/40 p-3.5 rounded-2xl border border-white/10 space-y-1.5 font-medium">
+                    <li>🔴 紅光 + 🟢 綠光 ＝ <span class="text-yellow-300">🟡 黃光 (Yellow)</span></li>
+                    <li>🟢 綠光 + 🔵 藍光 ＝ <span class="text-cyan-300">🩵 青光 (Cyan)</span></li>
+                    <li>🔴 紅光 + 🔵 藍光 ＝ <span class="text-fuchsia-300">🟣 洋紅光 (Magenta)</span></li>
+                    <li>🔴 紅 + 🟢 綠 + 🔵 藍 ＝ <span class="text-white">⚪ 純白光 (White)</span></li>
+                </ul>
+            </div>
+
+            <button id="btn-modal-ok" class="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold shadow-lg transition">
+                開始動手做實驗！
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * RGB 三原色光混合實驗室核心邏輯
+         * 使用 HTML5 Canvas 搭配 'lighter' (加法混色) 混合模式，真實還原物理光線疊加效果。
+         */
+
+        const canvas = document.getElementById('lightCanvas');
+        const ctx = canvas.getContext('2d');
+        const wrapper = document.getElementById('canvas-wrapper');
+
+        // UI 控制元素
+        const redSlider = document.getElementById('red-slider');
+        const greenSlider = document.getElementById('green-slider');
+        const blueSlider = document.getElementById('blue-slider');
+        const radiusSlider = document.getElementById('radius-slider');
+
+        const redValDisplay = document.getElementById('red-val');
+        const greenValDisplay = document.getElementById('green-val');
+        const blueValDisplay = document.getElementById('blue-val');
+        const redPercentDisplay = document.getElementById('red-percent');
+        const greenPercentDisplay = document.getElementById('green-percent');
+        const bluePercentDisplay = document.getElementById('blue-percent');
+        const radiusValDisplay = document.getElementById('radius-val');
+
+        const mixedPreview = document.getElementById('mixed-preview');
+        const mixedName = document.getElementById('mixed-name');
+        const mixedRgbText = document.getElementById('mixed-rgb-text');
+
+        const modeSoftBtn = document.getElementById('mode-soft');
+        const modeSharpBtn = document.getElementById('mode-sharp');
+
+        // 狀態變數
+        let width = 0;
+        let height = 0;
+        let isSoftBeam = false; // false: 銳利光圈(預設，方便教學觀察交集), true: 柔和聚光燈漸層
+        let beamRadius = 82;
+
+        // 三個光源物件 (位置採用相對於畫布中心的偏移量，確保視窗縮放時保持比例)
+        const lights = [
+            { id: 'red', label: 'R', r: 255, g: 0, b: 0, intensity: 255, offsetX: 0, offsetY: -45, targetX: 0, targetY: -45 },
+            { id: 'green', label: 'G', r: 0, g: 255, b: 0, intensity: 255, offsetX: -40, offsetY: 32, targetX: -40, targetY: 32 },
+            { id: 'blue', label: 'B', r: 0, g: 0, b: 255, intensity: 255, offsetX: 40, offsetY: 32, targetX: 40, targetY: 32 }
+        ];
+
+        // 懸浮星塵粒子陣列 (增加華麗視覺氛圍)
+        const particles = [];
+        const PARTICLE_COUNT = 55;
+
+        // 拖曳互動狀態
+        let draggedLight = null;
+        let dragStartOffset = { x: 0, y: 0 };
+
+        /**
+         * 初始化星塵粒子
+         */
+        function initParticles() {
+            particles.length = 0;
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                particles.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    size: Math.random() * 2 + 0.5,
+                    vx: (Math.random() - 0.5) * 0.4,
+                    vy: (Math.random() - 0.5) * 0.4,
+                    alpha: Math.random() * 0.6 + 0.2
+                });
+            }
+        }
+
+        /**
+         * 調整畫布尺寸以適應容器與高解析度螢幕 (Retina)
+         */
+        function resizeCanvas() {
+            const rect = wrapper.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            width = rect.width;
+            height = rect.height;
+
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            ctx.scale(dpr, dpr);
+
+            // 根據螢幕大小自動微調預設半徑
+            if (width < 500 && beamRadius > 80) {
+                beamRadius = 72;
+                radiusSlider.value = 72;
+                updateRadiusLabel();
+            }
+
+            if (particles.length === 0) {
+                initParticles();
+            }
+        }
+
+        /**
+         * 更新數字顯示與合成色彩資訊
+         */
+        function updateUI() {
+            const r = parseInt(redSlider.value);
+            const g = parseInt(greenSlider.value);
+            const b = parseInt(blueSlider.value);
+
+            lights[0].intensity = r;
+            lights[1].intensity = g;
+            lights[2].intensity = b;
+
+            // 更新數值標籤
+            redValDisplay.textContent = r;
+            greenValDisplay.textContent = g;
+            blueValDisplay.textContent = b;
+
+            redPercentDisplay.textContent = Math.round((r / 255) * 100) + '%';
+            greenPercentDisplay.textContent = Math.round((g / 255) * 100) + '%';
+            bluePercentDisplay.textContent = Math.round((b / 255) * 100) + '%';
+
+            // 更新合成色預覽方塊
+            const rgbString = `rgb(${r}, ${g}, ${b})`;
+            const hexString = '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('').toUpperCase();
+            
+            mixedPreview.style.backgroundColor = rgbString;
+            // 若亮度太低則減少發光陰影
+            const brightness = (r + g + b) / 3;
+            mixedPreview.style.boxShadow = brightness > 20 ? `0 0 ${Math.round(brightness / 8)}px ${rgbString}` : 'none';
+            mixedRgbText.textContent = `RGB(${r}, ${g}, ${b}) • ${hexString}`;
+
+            // 智慧判斷色彩名稱
+            mixedName.textContent = getColorName(r, g, b);
+        }
+
+        /**
+         * 根據 RGB 數值判斷中文顏色名稱，幫助學生理解混色結果
+         */
+        function getColorName(r, g, b) {
+            if (r < 25 && g < 25 && b < 25) return '無光 / 黑暗 (Black)';
+            if (r > 230 && g > 230 && b > 230) return '純白光 (White)';
+            if (Math.abs(r - g) < 25 && Math.abs(g - b) < 25) return '中性灰光 (Gray)';
+
+            // 雙色主導判斷
+            if (r > 200 && g > 200 && b < 80) return '亮黃光 (Yellow) [紅+綠]';
+            if (g > 200 && b > 200 && r < 80) return '青光 / 藍綠光 (Cyan) [綠+藍]';
+            if (r > 200 && b > 200 && g < 80) return '洋紅光 / 品紅 (Magenta) [紅+藍]';
+
+            // 單色或偏色判斷
+            if (r > g + 80 && r > b + 80) {
+                if (g > 100) return '暖橘光 (Orange)';
+                if (b > 100) return '桃紅光 (Rose)';
+                return '純紅光 (Red)';
+            }
+            if (g > r + 80 && g > b + 80) {
+                if (r > 100) return '黃綠光 / 萊姆綠 (Lime)';
+                if (b > 100) return '翠綠光 (Emerald)';
+                return '純綠光 (Green)';
+            }
+            if (b > r + 80 && b > g + 80) {
+                if (r > 100) return '紫羅蘭光 (Violet)';
+                if (g > 100) return '天藍光 (Sky Blue)';
+                return '純藍光 (Blue)';
+            }
+
+            return '自訂混合光 (Custom Mix)';
+        }
+
+        /**
+         * 套用預設色彩配方
+         */
+        window.applyPreset = function(r, g, b) {
+            redSlider.value = r;
+            greenSlider.value = g;
+            blueSlider.value = b;
+            updateUI();
+        };
+
+        /**
+         * 設定三個光源的目標位置 (附帶平滑動畫)
+         */
+        function setLightPositions(mode) {
+            const spreadDist = Math.min(width, height) * 0.14;
+            const overlapDist = Math.min(width, height) * 0.065;
+            const d = mode === 'spread' ? Math.max(65, spreadDist) : Math.max(28, overlapDist);
+
+            // 正三角形頂點排列
+            lights[0].targetX = 0;
+            lights[0].targetY = -d;
+
+            lights[1].targetX = -d * 0.866;
+            lights[1].targetY = d * 0.5;
+
+            lights[2].targetX = d * 0.866;
+            lights[2].targetY = d * 0.5;
+        }
+
+        function updateRadiusLabel() {
+            const val = parseInt(radiusSlider.value);
+            beamRadius = val;
+            if (val < 70) radiusValDisplay.textContent = '聚焦小光束';
+            else if (val < 115) radiusValDisplay.textContent = '標準';
+            else radiusValDisplay.textContent = '廣角大光圈';
+        }
+
+        /**
+         * 主繪圖迴圈
+         */
+        function render() {
+            // 1. 清除畫布
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.clearRect(0, 0, width, height);
+
+            const centerX = width / 2;
+            const centerY = height / 2;
+
+            // 2. 繪製背景微弱星塵粒子
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                if (p.x < 0) p.x = width;
+                if (p.x > width) p.x = 0;
+                if (p.y < 0) p.y = height;
+                if (p.y > height) p.y = 0;
+
+                ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha * 0.35})`;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 3. 平滑更新光源位置 (若非正在拖曳中)
+            lights.forEach(light => {
+                if (draggedLight !== light) {
+                    light.offsetX += (light.targetX - light.offsetX) * 0.12;
+                    light.offsetY += (light.targetY - light.offsetY) * 0.12;
+                }
+            });
+
+            // 4. 開啟「加法混色」模式 (lighter) —— 光學模擬的靈魂！
+            ctx.globalCompositeOperation = 'lighter';
+
+            lights.forEach(light => {
+                if (light.intensity <= 0) return;
+
+                const lx = centerX + light.offsetX;
+                const ly = centerY + light.offsetY;
+
+                // 計算該光源的 RGB 顏色值
+                const rVal = light.id === 'red' ? light.intensity : 0;
+                const gVal = light.id === 'green' ? light.intensity : 0;
+                const bVal = light.id === 'blue' ? light.intensity : 0;
+                const colorStr = `rgb(${rVal}, ${gVal}, ${bVal})`;
+
+                if (isSoftBeam) {
+                    // 【柔和聚光燈模式】：核心高亮度，外圍自然羽化光暈
+                    const outerRadius = beamRadius * 1.35;
+                    const grad = ctx.createRadialGradient(lx, ly, beamRadius * 0.15, lx, ly, outerRadius);
+                    grad.addColorStop(0, `rgba(${rVal}, ${gVal}, ${bVal}, 1)`);
+                    grad.addColorStop(0.55, `rgba(${rVal}, ${gVal}, ${bVal}, 0.85)`);
+                    grad.addColorStop(0.85, `rgba(${rVal}, ${gVal}, ${bVal}, 0.25)`);
+                    grad.addColorStop(1, `rgba(${rVal}, ${gVal}, ${bVal}, 0)`);
+
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(lx, ly, outerRadius, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    // 【銳利光圈模式】：邊界清晰，適合課堂上觀察交集幾何區塊
+                    ctx.fillStyle = colorStr;
+                    ctx.beginPath();
+                    ctx.arc(lx, ly, beamRadius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // 加上微弱外光暈增加華麗感
+                    const glowGrad = ctx.createRadialGradient(lx, ly, beamRadius * 0.9, lx, ly, beamRadius * 1.15);
+                    glowGrad.addColorStop(0, `rgba(${rVal}, ${gVal}, ${bVal}, 0.4)`);
+                    glowGrad.addColorStop(1, `rgba(${rVal}, ${gVal}, ${bVal}, 0)`);
+                    ctx.fillStyle = glowGrad;
+                    ctx.beginPath();
+                    ctx.arc(lx, ly, beamRadius * 1.15, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+
+            // 5. 切回正常繪圖模式，繪製光源中心拖曳控制點 (讓學生知道可以抓取)
+            ctx.globalCompositeOperation = 'source-over';
+            lights.forEach(light => {
+                const lx = centerX + light.offsetX;
+                const ly = centerY + light.offsetY;
+                const isHovered = draggedLight === light;
+
+                // 外圈虛線指示環
+                ctx.strokeStyle = isHovered ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.35)';
+                ctx.lineWidth = isHovered ? 2 : 1.2;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.arc(lx, ly, 16, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // 中心標籤文字 (R / G / B)
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+                ctx.font = 'bold 11px Orbitron, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(light.label, lx, ly);
+            });
+
+            requestAnimationFrame(render);
+        }
+
+        /**
+         * 滑鼠與觸控拖曳事件處理
+         */
+        function getPointerPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        function handlePointerDown(e) {
+            const pos = getPointerPos(e);
+            const centerX = width / 2;
+            const centerY = height / 2;
+
+            // 從上層往下檢查是否點選到某個光源
+            for (let i = lights.length - 1; i >= 0; i--) {
+                const light = lights[i];
+                const lx = centerX + light.offsetX;
+                const ly = centerY + light.offsetY;
+                const dist = Math.hypot(pos.x - lx, pos.y - ly);
+
+                if (dist <= beamRadius * 0.85) {
+                    draggedLight = light;
+                    dragStartOffset.x = pos.x - lx;
+                    dragStartOffset.y = pos.y - ly;
+                    wrapper.style.cursor = 'grabbing';
+                    break;
+                }
+            }
+        }
+
+        function handlePointerMove(e) {
+            if (!draggedLight) return;
+            if (e.cancelable) e.preventDefault(); // 防止手機端拖曳時頁面捲動
+
+            const pos = getPointerPos(e);
+            const centerX = width / 2;
+            const centerY = height / 2;
+
+            // 限制光圈不超出畫布邊界太多
+            const maxOffsetX = width / 2 - 30;
+            const maxOffsetY = height / 2 - 30;
+
+            let newOffsetX = pos.x - dragStartOffset.x - centerX;
+            let newOffsetY = pos.y - dragStartOffset.y - centerY;
+
+            newOffsetX = Math.max(-maxOffsetX, Math.min(maxOffsetX, newOffsetX));
+            newOffsetY = Math.max(-maxOffsetY, Math.min(maxOffsetY, newOffsetY));
+
+            draggedLight.offsetX = newOffsetX;
+            draggedLight.offsetY = newOffsetY;
+            draggedLight.targetX = newOffsetX;
+            draggedLight.targetY = newOffsetY;
+        }
+
+        function handlePointerUp() {
+            if (draggedLight) {
+                draggedLight = null;
+                wrapper.style.cursor = 'grab';
+            }
+        }
+
+        // 綁定畫布互動事件
+        canvas.addEventListener('mousedown', handlePointerDown);
+        window.addEventListener('mousemove', handlePointerMove);
+        window.addEventListener('mouseup', handlePointerUp);
+
+        canvas.addEventListener('touchstart', handlePointerDown, { passive: false });
+        window.addEventListener('touchmove', handlePointerMove, { passive: false });
+        window.addEventListener('touchend', handlePointerUp);
+
+        // 綁定滑桿事件
+        redSlider.addEventListener('input', updateUI);
+        greenSlider.addEventListener('input', updateUI);
+        blueSlider.addEventListener('input', updateUI);
+        radiusSlider.addEventListener('input', updateRadiusLabel);
+
+        // 綁定模式切換按鈕
+        modeSharpBtn.addEventListener('click', () => {
+            isSoftBeam = false;
+            modeSharpBtn.className = 'px-2 py-0.5 rounded text-[10px] font-medium bg-purple-600 text-white shadow transition';
+            modeSoftBtn.className = 'px-2 py-0.5 rounded text-[10px] font-medium text-slate-400 hover:text-white transition';
+        });
+
+        modeSoftBtn.addEventListener('click', () => {
+            isSoftBeam = true;
+            modeSoftBtn.className = 'px-2 py-0.5 rounded text-[10px] font-medium bg-purple-600 text-white shadow transition';
+            modeSharpBtn.className = 'px-2 py-0.5 rounded text-[10px] font-medium text-slate-400 hover:text-white transition';
+        });
+
+        // 快捷位置與重置按鈕
+        document.getElementById('btn-center').addEventListener('click', () => setLightPositions('overlap'));
+        document.getElementById('btn-spread').addEventListener('click', () => setLightPositions('spread'));
+        document.getElementById('btn-reset-values').addEventListener('click', () => applyPreset(255, 255, 255));
+
+        // 科學原理視窗控制
+        const infoModal = document.getElementById('info-modal');
+        document.getElementById('btn-info').addEventListener('click', () => {
+            infoModal.classList.remove('hidden');
+            infoModal.classList.add('flex');
+        });
+        const closeModalFn = () => {
+            infoModal.classList.add('hidden');
+            infoModal.classList.remove('flex');
+        };
+        document.getElementById('close-modal').addEventListener('click', closeModalFn);
+        document.getElementById('btn-modal-ok').addEventListener('click', closeModalFn);
+        infoModal.addEventListener('click', (e) => {
+            if (e.target === infoModal) closeModalFn();
+        });
+
+        // 視窗大小改變時重新適應
+        window.addEventListener('resize', resizeCanvas);
+
+        // 啟動應用程式
+        window.onload = function() {
+            resizeCanvas();
+            setLightPositions('overlap');
+            updateUI();
+            updateRadiusLabel();
+            render();
+        };
+    </script>
+</body>
+</html>
